@@ -3,6 +3,7 @@ package HttpHandlar;
 /**
  * Created by Zacky Kharboutli on 2018-02-15.
  */
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -23,83 +24,94 @@ public class HttpResponse {
 
     public HttpResponse(HttpRequest req, byte[] buffer) {
         // take the requested path from the Http request class
-        setPath(req.getFilename());
+        if (req.getMethodName().contains("GET")) {
+            setPath(req.getFilename());
 
-        if (path.endsWith("/")) {
-            setPath(path.substring(0, (path.length() - 1)));
-        }
-        //to ignore the difference between .html or htm
-        else if (path.endsWith(".htm")) {
-            path = path + "l";
-        }
-        // path always starts by dir because it is the only folder so far
-        this.file = new File("dir" + path);
-
-        //isAccessibleFile(file);  // check if the file is accessible
-        if (isFileExist(file) || !isAccessibleFile(file)) {
-            if (!isAccessibleFile(file)) {
-                //403 permission denied response if the file is not accessible
-                System.out.println("Permission denied: " + path);
-                setStatus("HTTP/1.1 403 Permission Denied " + "\r\n");
-                httpBody = ("<!DOCTYPE html>" +
-                        "<HTML>" +
-                        "<HEAD><TITLE>403 Forbidden: Permission Denied</TITLE></HEAD>" +
-                        "<BODY><h1> 403 Permission Denied</h1>" +
-                        "You do not have permission to access this directory or page </BODY></HTML>");
-                setUpHeader(FileType(path), httpBody.length());
-
-                somethingWrong = true;
-
-            } else {
-                try {
-                    //202 ok when everything is allrigt
-                    setStatus("HTTP/1.1 200 OK " + "\r\n");
-                    setUpHeader(FileType(path), file.length());
-                    int byteRead = 0;
-                    // first check if it is a picture
-                    if (path.endsWith(".png")) {
-                        buf = new byte[(int) file.length()];
-                        fileStream.read(buf);
-
-                        isImage = true;
-                    } else {
-                        do {
-                            // do this loop until the whole stream is over
-                            setResponse(new String(buffer, 0, byteRead));
-                        } while ((byteRead = fileStream.read(buffer)) != -1);
-
-                    }
-                } catch (IOException e) {
-                    e.getMessage();
-                } catch (Exception e) {
-                    e.getMessage();
-                }
+            if (path.endsWith("/")) {
+                setPath(path.substring(0, (path.length() - 1)));
             }
-        } else if (!isFileExist(file)) {
-            //404 file not found response
-            //this to be decided by the method isFIleExist
-            setStatus("HTTP/1.1 404 NOT FOUND " + "\r\n");
-            httpBody = "<!DOCTYPE html>" +
-                    "<HTML>" +
-                    "<HEAD><TITLE>404 Not Found</TITLE></HEAD>" +
-                    "<BODY><h1> 404 NOT FOUND</h1>" +
-                    "Requested page is not found!</BODY></HTML>";
+            //to ignore the difference between .html or htm
+            else if (path.endsWith(".htm")) {
+                path = path + "l";
+            }
+            // path always starts by dir because it is the only folder so far
+            this.file = new File("dir" + path);
 
-            setUpHeader(FileType(path), httpBody.length());
-            somethingWrong = true; // when error occur
-        } else {
-            //500 internal sever error
-            setStatus("HTTP/1.1 500 Internal Server Error " + "\r\n");
-
-            httpBody = (
-                    "<!DOCTYPE html>" +
+            //isAccessibleFile(file);  // check if the file is accessible
+            if (isFileExist(file) || !isAccessibleFile(file)) {
+                if (!isAccessibleFile(file)) {
+                    //403 permission denied response if the file is not accessible
+                    System.out.println("Permission denied: " + path);
+                    setStatus("HTTP/1.1 403 Permission Denied " + "\r\n");
+                    httpBody = ("<!DOCTYPE html>" +
                             "<HTML>" +
-                            "<HEAD><TITLE>500 Internal Server Error</TITLE></HEAD>" +
-                            "<BODY><h1> 500 Internal Server Error</h1>" +
-                            "The server encountered an internal error and was unable to complete your request</BODY></HTML>"
-            );
-            setUpHeader(FileType(path), httpBody.length());
-            somethingWrong = true;
+                            "<HEAD><TITLE>403 Forbidden: Permission Denied</TITLE></HEAD>" +
+                            "<BODY><h1> 403 Permission Denied</h1>" +
+                            "You do not have permission to access this directory or page </BODY></HTML>");
+                    setUpHeader(FileType(path), httpBody.length());
+
+                    somethingWrong = true;
+
+                } else {
+                    try {
+                        //202 ok when everything is allrigt
+                        setStatus("HTTP/1.1 200 OK " + "\r\n");
+                        setUpHeader(FileType(path), file.length());
+                        Stream(file, buffer);
+
+                    } catch (IOException e) {
+                        e.getMessage();
+                    } catch (Exception e) {
+                        e.getMessage();
+                    }
+                }
+
+            }
+            // 302 FOUND Redirect URL
+            else if ((path.contains("test1.html"))) {
+                setStatus("HTTP/1.1 302  FOUND " + "\r\n");
+                httpBody = "<!DOCTYPE html>" +
+                        "<HTML>" +
+                        "<HEAD><TITLE>302  Found</TITLE></HEAD>" +
+                        "<BODY><h1> 302 FOUND</h1>" +
+                        "\nThe file you requested has been moved " +
+                        "<a href=\"/test.html\">HERE!</a>\n</BODY></HTML>";
+
+                setUpHeader(FileType(path), httpBody.length());
+                somethingWrong = true; // when error occur
+
+                System.out.println(path);
+
+
+            } else if (!isFileExist(file)) {
+                //404 file not found response
+                //this to be decided by the method isFIleExist
+                setStatus("HTTP/1.1 404 NOT FOUND " + "\r\n");
+                httpBody = "<!DOCTYPE html>" +
+                        "<HTML>" +
+                        "<HEAD><TITLE>404 Not Found</TITLE></HEAD>" +
+                        "<BODY><h1> 404 NOT FOUND</h1>" +
+                        "Requested page is not found!</BODY></HTML>";
+
+                setUpHeader(FileType(path), httpBody.length());
+                somethingWrong = true; // when error occur
+            } else {
+                //500 internal sever error
+                setStatus("HTTP/1.1 500 Internal Server Error " + "\r\n");
+
+                httpBody = (
+                        "<!DOCTYPE html>" +
+                                "<HTML>" +
+                                "<HEAD><TITLE>500 Internal Server Error</TITLE></HEAD>" +
+                                "<BODY><h1> 500 Internal Server Error</h1>" +
+                                "The server encountered an internal error and was unable to complete your request</BODY></HTML>"
+                );
+                setUpHeader(FileType(path), httpBody.length());
+                somethingWrong = true;
+            }
+        }
+        else if (req.getMethodName().contains("POST")){
+
         }
     }
 
@@ -111,6 +123,7 @@ public class HttpResponse {
      * @return true or false
      */
     private boolean isFileExist(File file) {
+        this.file = file;
         try {
             fileStream = new FileInputStream(file);
 
@@ -189,6 +202,25 @@ public class HttpResponse {
         return "File is undefined";
     }
 
+    public void Stream(File file, byte[] buffer) throws IOException {
+        this.file = file;
+        int byteRead = 0;
+        // first check if it is a picture
+        if (path.endsWith(".png")) {
+            buf = new byte[(int) file.length()];
+            fileStream.read(buf);
+            System.out.print("22424");
+            isImage = true;
+        } else {
+            do {
+                // do this loop until the whole stream is over
+                setResponse(new String(buffer, 0, byteRead));
+            } while ((byteRead = fileStream.read(buffer)) != -1);
+
+        }
+
+    }
+
 
     private void setPath(String path) {
         this.path = path;
@@ -209,7 +241,7 @@ public class HttpResponse {
     private void setResponse(String response) {
         this.response += response;
     }
-    
+
     public String getHttpBody() {
         return this.httpBody;
     }
