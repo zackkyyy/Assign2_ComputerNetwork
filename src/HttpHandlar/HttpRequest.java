@@ -5,23 +5,35 @@ package HttpHandlar;
  */
 public class    HttpRequest {
     private String filename;
-    private String methodName;
+    private String requestType;
+    private String[] temp;
     public HttpRequest(String method) {
-        String[] temp = method.split("\n");
-        setFilename(temp[0].split(" ")[1]);
-        setMethod(temp[0]. split(" ")[0]);
-    }
+
+         temp = method.split("\n");
+        filename=""+temp[0].split(" ")[1];
+
+        requestType=""+ temp[0]. split(" ")[0];
+        }
 
     public String getFilename() {
         return filename;
     }
-    private void setFilename(String filename) {
-        this.filename = filename;
-    }
-    private void setMethod(String method){
-        this.methodName=method;
-    }
+
     public String getMethodName(){
-        return methodName;
+
+        for(Object o : HTTP_RequestType.values())
+        {
+            if(requestType.contains(o.toString().toLowerCase()))
+            {
+                 requestType= o.toString();
+            }
+        }
+        return requestType;
+    }
+
+    enum HTTP_RequestType {
+        GET,
+        POST,
+        PUT
     }
 }

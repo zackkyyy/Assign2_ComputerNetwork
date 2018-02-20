@@ -36,45 +36,47 @@ public class clientThread implements Runnable {
 
     public void run() {
         String receivedMessage = "";      // here we will get the desired method
-        try {
+        int ind = 0;
+        while (ind == 0) {
 
-            int byteRead = 0;
             try {
-                if ((byteRead = in.read(buf)) != -1) {
-                    receivedMessage += new String(buf, 0, byteRead);
-                    System.out.println(receivedMessage);
 
+                int byteRead = 0;
+                try {
+                    if ((byteRead = in.read(buf)) != -1) {
+                        receivedMessage += new String(buf, 0, byteRead);
+                        System.out.println(receivedMessage);
+
+                    }
+
+                    HttpResponse response = new HttpResponse(new HttpRequest(receivedMessage), buf);
+
+                    // write the html response when errors occurs
+                    out.write(response.getStatus().getBytes());
+                    out.write(response.getResponse().getBytes());
+
+
+                    // stream png files
+                    if (response.isImage()) {
+                        out.write(response.getBuf());
+
+                    } else if (response.isSomethingWrong()) {
+                        out.write(response.getHttpBody().getBytes());
+                    }
+                    out.flush();
+                    ind = 1;
+
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
 
-                HttpResponse response = new HttpResponse(new HttpRequest(receivedMessage), buf);
-
-                // write the html response when errors occurs
-                out.write(response.getStatus().getBytes());
-                out.write(response.getResponse().getBytes());
+                System.out.println();
 
 
-                // stream png files
-                if (response.isImage()) {
-                    out.write(response.getBuf());
-
-                }
-                else if (response.isSomethingWrong()) {
-                    out.write(response.getHttpBody().getBytes());
-                }
-                out.flush();
-
-
-            } catch (IOException e) {
-                e.printStackTrace();
+            } catch (Exception e) {
+                e.getMessage();
             }
-
-            System.out.println();
-
-
-        } catch (Exception e) {
-            e.getMessage();
         }
-
         try {
             socket.close();
         } catch (IOException e) {
