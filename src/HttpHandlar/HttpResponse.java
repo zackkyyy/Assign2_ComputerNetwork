@@ -4,14 +4,11 @@ package HttpHandlar;
  * Created by Zacky Kharboutli on 2018-02-15.
  */
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.util.Date;
 
 public class HttpResponse {
-
+    private BufferedReader bufferedReader;
     private FileInputStream fileStream = null;
     private File file = null;
     private boolean somethingWrong = false; // this to detect if there is an error to print it
@@ -21,14 +18,19 @@ public class HttpResponse {
     private String response = "";
     private String httpBody = "";
     private byte[] buf;
-
-    public HttpResponse(HttpRequest req, byte[] buffer) {
+    private boolean isPost=false;
+    public HttpResponse(HttpRequest req, byte[] buffer) throws IOException {
+      //  setPath(req.getFilename()+ "/dir")  ;
         // take the requested path from the Http request class
-        if (req.getMethodName().contains("GET")) {
+        if (req.getMethodName().equals(HttpRequest.HTTP_RequestType.GET.toString())) {
+
             setPath(req.getFilename());
 
             if (path.endsWith("/")) {
                 setPath(path.substring(0, (path.length() - 1)));
+            }
+            if (path.isEmpty()){
+                setPath(path+"/main.html");
             }
             //to ignore the difference between .html or htm
             else if (path.endsWith(".htm")) {
@@ -109,11 +111,22 @@ public class HttpResponse {
                 setUpHeader(FileType(path), httpBody.length());
                 somethingWrong = true;
             }
-        }
-        else if (req.getMethodName().contains("POST")){
+        } else if (req.getMethodName().contains("POST")) {
+            if (path.endsWith("/")) {
+                setPath(path.substring(0, (path.length() - 2)));
 
+            }
+
+            // POST METHOD ******************************
+            else if (req.getMethodName().equals(HttpRequest.HTTP_RequestType.POST.toString())) {
+
+            //TODO implement post method
+
+            }
         }
     }
+
+
 
     /**
      * Method that checks if the path navigate to an exist file
@@ -202,6 +215,16 @@ public class HttpResponse {
         return "File is undefined";
     }
 
+    /**
+     * This method checks whether the file is Png or HTML and then stream it
+     * to show it on the web page.
+     * isImage is used to tell the client to stream the buf as it is an image
+     *
+     * @param file requested file to be streamed
+     * @param buffer
+     * @throws IOException
+     */
+
     public void Stream(File file, byte[] buffer) throws IOException {
         this.file = file;
         int byteRead = 0;
@@ -209,7 +232,6 @@ public class HttpResponse {
         if (path.endsWith(".png")) {
             buf = new byte[(int) file.length()];
             fileStream.read(buf);
-            System.out.print("22424");
             isImage = true;
         } else {
             do {
