@@ -9,11 +9,11 @@ public class    HttpRequest {
     private String[] temp;
     public HttpRequest(String method) {
 
-         temp = method.split("\n");
+        temp = method.split("\n");
         filename=""+temp[0].split(" ")[1];
 
         requestType=""+ temp[0]. split(" ")[0];
-        }
+    }
 
     public String getFilename() {
         return filename;
@@ -25,7 +25,7 @@ public class    HttpRequest {
         {
             if(requestType.contains(o.toString().toLowerCase()))
             {
-                 requestType= o.toString();
+                requestType= o.toString();
             }
         }
         return requestType;

@@ -4,11 +4,13 @@ package HttpHandlar;
  * Created by Zacky Kharboutli on 2018-02-15.
  */
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Date;
 
 public class HttpResponse {
-    private BufferedReader bufferedReader;
     private FileInputStream fileStream = null;
     private File file = null;
     private boolean somethingWrong = false; // this to detect if there is an error to print it
@@ -18,9 +20,8 @@ public class HttpResponse {
     private String response = "";
     private String httpBody = "";
     private byte[] buf;
-    private boolean isPost=false;
     public HttpResponse(HttpRequest req, byte[] buffer) throws IOException {
-      //  setPath(req.getFilename()+ "/dir")  ;
+        //  setPath(req.getFilename()+ "/dir")  ;
         // take the requested path from the Http request class
         if (req.getMethodName().equals(HttpRequest.HTTP_RequestType.GET.toString())) {
 
@@ -40,7 +41,7 @@ public class HttpResponse {
             this.file = new File("dir" + path);
 
             //isAccessibleFile(file);  // check if the file is accessible
-            if (isFileExist(file) || !isAccessibleFile(file)) {
+            if (isFileExist(file) || !isAccessibleFile(file) ) {
                 if (!isAccessibleFile(file)) {
                     //403 permission denied response if the file is not accessible
                     System.out.println("Permission denied: " + path);
@@ -54,7 +55,8 @@ public class HttpResponse {
 
                     somethingWrong = true;
 
-                } else {
+                }
+                else {
                     try {
                         //202 ok when everything is allrigt
                         setStatus("HTTP/1.1 200 OK " + "\r\n");
@@ -67,7 +69,6 @@ public class HttpResponse {
                         e.getMessage();
                     }
                 }
-
             }
             // 302 FOUND Redirect URL
             else if ((path.contains("test1.html"))) {
@@ -85,7 +86,21 @@ public class HttpResponse {
                 System.out.println(path);
 
 
-            } else if (!isFileExist(file)) {
+            }
+            else if (isFileCharged(file)){
+                System.out.println("Permission denied: " + path);
+                setStatus("HTTP/1.1 402 Payment required " + "\r\n");
+                httpBody = ("<!DOCTYPE html>" +
+                        "<HTML>" +
+                        "<HEAD><TITLE>402 Payment required </TITLE></HEAD>" +
+                        "<BODY><h1> 402 Payment required for this request</h1>" +
+                        "You do have to subscribe or pay to get access to this page </BODY></HTML>");
+                setUpHeader(FileType(path), httpBody.length());
+
+                somethingWrong = true;
+            }
+
+            else if (!isFileExist(file)) {
                 //404 file not found response
                 //this to be decided by the method isFIleExist
                 setStatus("HTTP/1.1 404 NOT FOUND " + "\r\n");
@@ -120,12 +135,30 @@ public class HttpResponse {
             // POST METHOD ******************************
             else if (req.getMethodName().equals(HttpRequest.HTTP_RequestType.POST.toString())) {
 
-            //TODO implement post method
 
             }
+
         }
     }
 
+    private boolean isFileCharged(File file) {
+        String payedFile = "payment.html";
+        try {
+            if (path.contains(payedFile)) {
+                file.setExecutable(false);
+                file.setReadable(false);
+                file.setReadable(false);
+                return true;
+            }
+
+        } catch (Exception e) {
+            System.out.println("File cannot be accessed");
+            e.getMessage();
+        }
+
+        return false ;
+
+    }
 
 
     /**
@@ -149,7 +182,7 @@ public class HttpResponse {
             }
 
         } catch (FileNotFoundException e) {
-            System.out.println("File is not exist");
+            System.out.println("file is not available");
             return false;
         }
     }
