@@ -7,9 +7,10 @@ public class    HttpRequest {
     private String filename;
     private String requestType;
     private String[] temp;
+    private String request="";
     public HttpRequest(String method) {
-
-         temp = method.split("\n");
+        this.request=method;
+        temp = method.split("\n");
         filename=""+temp[0].split(" ")[1];
 
         requestType=""+ temp[0]. split(" ")[0];
@@ -35,5 +36,13 @@ public class    HttpRequest {
         GET,
         POST,
         PUT
+    }
+
+    public String[] getTemp(){
+        return temp;
+    }
+
+    public String getRequest(){
+        return request;
     }
 }

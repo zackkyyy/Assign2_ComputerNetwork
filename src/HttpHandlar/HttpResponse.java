@@ -5,6 +5,10 @@ package HttpHandlar;
  */
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.Date;
 
 public class HttpResponse {
@@ -19,6 +23,12 @@ public class HttpResponse {
     private String httpBody = "";
     private byte[] buf;
     private boolean isPost=false;
+
+    private String fileName="";
+    private String imgString64="";
+    private byte[] imgData;
+    FileOutputStream fos;
+
     public HttpResponse(HttpRequest req, byte[] buffer) throws IOException {
       //  setPath(req.getFilename()+ "/dir")  ;
         // take the requested path from the Http request class
@@ -111,18 +121,28 @@ public class HttpResponse {
                 setUpHeader(FileType(path), httpBody.length());
                 somethingWrong = true;
             }
-        } else if (req.getMethodName().contains("POST")) {
-            if (path.endsWith("/")) {
-                setPath(path.substring(0, (path.length() - 2)));
-
-            }
-
             // POST METHOD ******************************
-            else if (req.getMethodName().equals(HttpRequest.HTTP_RequestType.POST.toString())) {
+        } else if (req.getMethodName().equals(HttpRequest.HTTP_RequestType.POST.toString())) {
 
-            //TODO implement post method
+            fileName=req.getTemp()[14].split("=")[1];
+            fileName=fileName.substring(0,fileName.length()-1);
 
-            }
+            setPath("dir/subdir/"+fileName);
+            imgString64=req.getTemp()[15].split(",")[1];
+            imgData=javax.xml.bind.DatatypeConverter.parseBase64Binary(imgString64);
+
+            setStatus("HTTP/1.1 200 OK " + "\r\n");
+            setUpHeader(FileType(path), imgData.length);
+
+            isImage=true;
+
+            /***creating new file on server from data received from browser***/
+            file= new File(path);
+            fos=new FileOutputStream(file);
+            fos.write(imgData);
+            fos.close();
+            //TODO implement post methodddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+
         }
     }
 
@@ -187,12 +207,10 @@ public class HttpResponse {
                 file.setReadable(false);
                 return false;
             }
-
         } catch (Exception e) {
             System.out.println("File cannot be accessed");
             e.getMessage();
         }
-
         return true;
 
     }
@@ -279,4 +297,9 @@ public class HttpResponse {
     public byte[] getBuf() {
         return buf;
     }
+
+    public byte[] getImgData(){
+        return imgData;
+    }
+
 }
