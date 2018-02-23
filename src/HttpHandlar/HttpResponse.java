@@ -4,13 +4,15 @@ package HttpHandlar;
  * Created by Zacky Kharboutli on 2018-02-15.
  */
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.util.Date;
 
 public class HttpResponse {
+    private  boolean isPost=false;
+    private  String imgString64;
+    private  byte[] imgData;
+    private  FileOutputStream fos;
+    private  String fileName;
     private FileInputStream fileStream = null;
     private File file = null;
     private boolean somethingWrong = false; // this to detect if there is an error to print it
@@ -134,7 +136,27 @@ public class HttpResponse {
 
             // POST METHOD ******************************
             else if (req.getMethodName().equals(HttpRequest.HTTP_RequestType.POST.toString())) {
+                isPost=true;
+                fileName=req.getUploadFileName();
+                fileName=fileName.substring(0,fileName.length()-1);
 
+                setPath("dir/subdir/"+fileName);
+                imgString64=req.getImgToString();
+                imgData=javax.xml.bind.DatatypeConverter.parseBase64Binary(imgString64);
+
+                System.out.println(fileName +" is file name       " +path +" is path");
+                isImage=true;
+
+                /***creating new file on server from data received from browser***/
+                file= new File(path);
+                fos=new FileOutputStream(file);
+                fos.write(imgData);
+                fos.close();
+                System.out.println(file +" is file ");
+                //TODO implement post methodddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+
+                setStatus("HTTP/1.1 200 OK " + "\r\n");
+                setUpHeader(FileType(path), file.length());
 
             }
 
@@ -311,5 +333,13 @@ public class HttpResponse {
 
     public byte[] getBuf() {
         return buf;
+    }
+
+    public byte[] getimgData() {
+        return imgData;
+    }
+
+    public boolean isPost() {
+        return isPost;
     }
 }

@@ -11,7 +11,7 @@ import java.net.Socket;
  * Created by Zacky Kharboutli on 2018-02-15.
  */
 public class clientThread implements Runnable {
-    public static final int BUFSIZE = 10000;
+    public static final int BUFSIZE = 214748360;
     public Socket socket;
     public int userNumber;
     public DataInputStream in;
@@ -57,10 +57,14 @@ public class clientThread implements Runnable {
 
 
                     // stream png files
-                    if (response.isImage()) {
+                    if (response.isImage()&&!response.isPost()) {
                         out.write(response.getBuf());
+                    }
+                        if (response.isImage()&&response.isPost()) {
+                            out.write(response.getimgData());
+                    }
 
-                    } else if (response.isSomethingWrong()) {
+                    if (response.isSomethingWrong()) {
                         out.write(response.getHttpBody().getBytes());
                     }
                     out.flush();
