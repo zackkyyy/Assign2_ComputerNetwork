@@ -5,14 +5,17 @@ package HttpHandlar;
  */
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 
 public class HttpResponse {
-    private  boolean isPost=false;
-    private  String imgString64;
-    private  byte[] imgData;
-    private  FileOutputStream fos;
-    private  String fileName;
+    private boolean isPost = false;
+    private String imgString64;
+    private byte[] imgData;
+    private FileOutputStream fos;
+    private String fileName;
     private FileInputStream fileStream = null;
     private File file = null;
     private boolean somethingWrong = false; // this to detect if there is an error to print it
@@ -34,8 +37,8 @@ public class HttpResponse {
             if (path.endsWith("/")) {
                 setPath(path.substring(0, (path.length() - 1)));
             }
-            if (path.isEmpty()){
-                setPath(path+"/main.html");
+            if (path.isEmpty()) {
+                setPath(path + "/main.html");
             }
             //to ignore the difference between .html or htm
             else if (path.endsWith(".htm")) {
@@ -48,14 +51,8 @@ public class HttpResponse {
             if (isFileExist(file) || !isAccessibleFile(file)) {
                 if (!isAccessibleFile(file)) {
                     //403 permission denied response if the file is not accessible
-                    responseFactory = new responseFactory(HttpHandlar.responseFactory.ResponseNr.forbidden403);
                     System.out.println("Permission denied: " + path);
-                    setStatus(responseFactory.getStatus());
-                    httpBody = responseFactory.getHttpBody();
-                    setUpHeader(FileType(path), httpBody.length());
-
-                    somethingWrong = true;
-
+                    createResponse(HttpHandlar.responseFactory.ResponseNr.forbidden403);
                 } else {
                     try {
                         //200 ok when everything is allrigt
@@ -70,68 +67,131 @@ public class HttpResponse {
                         e.getMessage();
                     }
                 }
+            } else if (path.startsWith("/delete/")) {
+                String fileToDelete = path.split("/")[2];
+                path = "dir/subdir/" + fileToDelete;
+                Path p = Paths.get(path);
+                if (Files.deleteIfExists(p)) {
+                    setStatus("HTTP/1.1 200 OK " + "\r\n");
+                    httpBody = ("<!DOCTYPE html>" +
+                            "<HTML>" +
+                            "<HEAD><TITLE>File deleted </TITLE></HEAD>" +
+                            "<BODY><h1> File successfuly deleted</h1>" +
+                            "The server doesn't contain the file " + fileToDelete + " anymore.</BODY></HTML>"
+                    );
+                    setUpHeader("file type is Html", httpBody.length());
+                    setResponse(httpBody);
+                } else {
+                    setStatus("HTTP/1.1 200 OK " + "\r\n");
+                    httpBody = ("<!DOCTYPE html>" +
+                            "<HTML>" +
+                            "<HEAD><TITLE>Failure </TITLE></HEAD>" +
+                            "<BODY><h1> The server doesn't contain the file to delete</h1>" +
+                            "Try uploading the file " + fileToDelete + " first.</BODY></HTML>"
+                    );
+                    setUpHeader("file type is Html", httpBody.length());
+                    setResponse(httpBody);
+                }
+
+
             }
             // 302 FOUND Redirect URL
             else if ((path.contains("test1.html"))) {
-                responseFactory = new responseFactory(HttpHandlar.responseFactory.ResponseNr.found302);
-                setStatus(responseFactory.getStatus());
-                httpBody = responseFactory.getHttpBody();
-                setUpHeader(FileType(path), httpBody.length());
-                somethingWrong = true; // when error occur
-
+                createResponse(HttpHandlar.responseFactory.ResponseNr.found302);
 
             } else if (isFileCharged(file)) {
-                responseFactory = new responseFactory(HttpHandlar.responseFactory.ResponseNr.payment402);
-                setStatus(responseFactory.getStatus());
-                httpBody = responseFactory.getHttpBody();
-                setUpHeader(FileType(path), httpBody.length());
-                somethingWrong = true;
+                //404 file is not free source
+                createResponse(HttpHandlar.responseFactory.ResponseNr.payment402);
+
             } else if (!isFileExist(file)) {
                 //404 file not found response
-                //this to be decided by the method isFIleExist
-                responseFactory = new responseFactory(HttpHandlar.responseFactory.ResponseNr.NotFound404);
-                setStatus(responseFactory.getStatus());
-                httpBody = responseFactory.getHttpBody();
-                setUpHeader(FileType(path), httpBody.length());
-                somethingWrong = true; // when error occur
+                createResponse(HttpHandlar.responseFactory.ResponseNr.NotFound404);
             } else {
                 //500 internal sever error
-                responseFactory = new responseFactory(HttpHandlar.responseFactory.ResponseNr.internal500);
-                setStatus(responseFactory.getStatus());
-                httpBody = responseFactory.getHttpBody();
-                setUpHeader(FileType(path), httpBody.length());
-                somethingWrong = true;
+                createResponse(HttpHandlar.responseFactory.ResponseNr.internal500);
+
             }
         }
 
-            // POST METHOD ******************************
-            else if (req.getMethodName().equals(HttpRequest.HTTP_RequestType.POST.toString())) {
-                isPost=true;
-                fileName=req.getUploadFileName();
-                fileName=fileName.substring(0,fileName.length()-1);
+        // POST METHOD ******************************
+        else if (req.getMethodName().equals(HttpRequest.HTTP_RequestType.POST.toString())) {
+            isPost = true;
+            fileName = req.getUploadFileName();
+            fileName = fileName.substring(0, fileName.length() - 1);
 
-                setPath("dir/subdir/"+fileName);
-                imgString64=req.getImgToString();
-                imgData=javax.xml.bind.DatatypeConverter.parseBase64Binary(imgString64);
+            setPath("dir/subdir/" + fileName);
+            imgString64 = req.getImgToString();
+            imgData = javax.xml.bind.DatatypeConverter.parseBase64Binary(imgString64);
 
-                System.out.println(fileName +" is file name       " +path +" is path");
-                isImage=true;
+            System.out.println(fileName + " is file name       " + path + " is path");
+            isImage = true;
 
-                /***creating new file on server from data received from browser***/
-                file= new File(path);
-                fos=new FileOutputStream(file);
-                fos.write(imgData);
-                fos.close();
-                System.out.println(file +" is file ");
+            //creating new file on server from data received from browser
+            file = new File(path);
+            fos = new FileOutputStream(file);
+            fos.write(imgData);
+            fos.close();
+            System.out.println(file + " is file ");
+
+            setStatus("HTTP/1.1 201 created " + "\r\n");
+            setUpHeader(FileType(path), file.length());
+
+        } else if (req.getMethodName().equals(HttpRequest.HTTP_RequestType.PUT.toString())) {
+            fileName = req.getUploadFileName();
+            fileName = fileName.substring(0, fileName.length() - 1);
+
+            setPath("dir/subdir/" + fileName);
+            File temp = new File(path);
+            if (!temp.exists()) {
+                imgString64 = req.getImgToString();
+                imgData = javax.xml.bind.DatatypeConverter.parseBase64Binary(imgString64);
 
                 setStatus("HTTP/1.1 200 OK " + "\r\n");
-                setUpHeader(FileType(path), file.length());
+                setUpHeader(FileType(path), imgData.length);
+
+                //creating new file on server from data received from browser
+                file = new File(path);
+                fos = new FileOutputStream(file);
+                fos.write(imgData);
+                fos.close();
+            } else {
+                setStatus("HTTP/1.1 200 OK " + "\r\n");
+                httpBody = ("<!DOCTYPE html>" +
+                        "<HTML>" +
+                        "<HEAD><TITLE>Put request</TITLE></HEAD>" +
+                        "<BODY><h1> Put request cancelled</h1>" +
+                        "The server already contain this file," +
+                        " you can't do twice the same PUT request.</BODY></HTML>"
+                );
+                setUpHeader("file type is Html", httpBody.length());
+                setResponse(httpBody);
 
             }
 
         }
 
+    }
 
+    /**
+     * Method that forms the status and the http body and the headers
+     * Relies on the responseFactory class.
+     *
+     * @param responseNr enum that tells which error to be presented
+     */
+    private void createResponse(HttpHandlar.responseFactory.ResponseNr responseNr) {
+        responseFactory = new responseFactory(responseNr);
+        setStatus(responseFactory.getStatus());
+        httpBody = responseFactory.getHttpBody();
+        setUpHeader(FileType(path), httpBody.length());
+        somethingWrong = true;
+    }
+
+    /**
+     * Method to test the exception 403 payment
+     *
+     * @param file the file to be checked
+     * @return true or false
+     */
     private boolean isFileCharged(File file) {
         String payedFile = "payment.html";
         try {
@@ -147,7 +207,7 @@ public class HttpResponse {
             e.getMessage();
         }
 
-        return false ;
+        return false;
 
     }
 
@@ -244,7 +304,7 @@ public class HttpResponse {
      * to show it on the web page.
      * isImage is used to tell the client to stream the buf as it is an image
      *
-     * @param file requested file to be streamed
+     * @param file   requested file to be streamed
      * @param buffer
      * @throws IOException
      */

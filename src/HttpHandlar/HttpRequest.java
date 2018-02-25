@@ -10,17 +10,25 @@ public class    HttpRequest {
     private String[] temp;
     String uploadFileName;
     public HttpRequest(String method) {
+        int put=0;
 
         temp = method.split("\n");
         filename=""+temp[0].split(" ")[1];
-        requestType=""+ temp[0]. split(" ")[0];
+      //  requestType=""+ temp[0]. split(" ")[0];
         for (int i = 10 ; i<temp.length ;i++){
-            if (temp[i].contains("pic")){
+            if (temp[i].contains("pic=")){
                 uploadFileName =temp[i].split("=")[1];
             }
             if(temp[i].contains("base64")){
                 imgToString =temp[i].split(",")[1];
             }
+            if(temp[i].contains("Request_method=put")){
+                requestType="PUT";
+                put=1;
+            }
+        }
+        if(put==0) {
+            requestType = "" + temp[0].split(" ")[0];
         }
     }
 
@@ -42,6 +50,10 @@ public class    HttpRequest {
 
     public String getUploadFileName() {
         return uploadFileName;
+    }
+
+    public String[] getTemp() {
+        return temp;
     }
 
     enum HTTP_RequestType {
