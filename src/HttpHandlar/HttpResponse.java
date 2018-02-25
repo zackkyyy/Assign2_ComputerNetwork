@@ -22,6 +22,8 @@ public class HttpResponse {
     private String response = "";
     private String httpBody = "";
     private byte[] buf;
+    private responseFactory responseFactory;
+
     public HttpResponse(HttpRequest req, byte[] buffer) throws IOException {
         //  setPath(req.getFilename()+ "/dir")  ;
         // take the requested path from the Http request class
@@ -43,25 +45,22 @@ public class HttpResponse {
             this.file = new File("dir" + path);
 
             //isAccessibleFile(file);  // check if the file is accessible
-            if (isFileExist(file) || !isAccessibleFile(file) ) {
+            if (isFileExist(file) || !isAccessibleFile(file)) {
                 if (!isAccessibleFile(file)) {
                     //403 permission denied response if the file is not accessible
+                    responseFactory = new responseFactory(HttpHandlar.responseFactory.ResponseNr.forbidden403);
                     System.out.println("Permission denied: " + path);
-                    setStatus("HTTP/1.1 403 Permission Denied " + "\r\n");
-                    httpBody = ("<!DOCTYPE html>" +
-                            "<HTML>" +
-                            "<HEAD><TITLE>403 Forbidden: Permission Denied</TITLE></HEAD>" +
-                            "<BODY><h1> 403 Permission Denied</h1>" +
-                            "You do not have permission to access this directory or page </BODY></HTML>");
+                    setStatus(responseFactory.getStatus());
+                    httpBody = responseFactory.getHttpBody();
                     setUpHeader(FileType(path), httpBody.length());
 
                     somethingWrong = true;
 
-                }
-                else {
+                } else {
                     try {
-                        //202 ok when everything is allrigt
-                        setStatus("HTTP/1.1 200 OK " + "\r\n");
+                        //200 ok when everything is allrigt
+                        responseFactory = new responseFactory(HttpHandlar.responseFactory.ResponseNr.OK200);
+                        setStatus(responseFactory.getStatus());
                         setUpHeader(FileType(path), file.length());
                         Stream(file, buffer);
 
@@ -74,65 +73,36 @@ public class HttpResponse {
             }
             // 302 FOUND Redirect URL
             else if ((path.contains("test1.html"))) {
-                setStatus("HTTP/1.1 302  FOUND " + "\r\n");
-                httpBody = "<!DOCTYPE html>" +
-                        "<HTML>" +
-                        "<HEAD><TITLE>302  Found</TITLE></HEAD>" +
-                        "<BODY><h1> 302 FOUND</h1>" +
-                        "\nThe file you requested has been moved " +
-                        "<a href=\"/test.html\">HERE!</a>\n</BODY></HTML>";
-
+                responseFactory = new responseFactory(HttpHandlar.responseFactory.ResponseNr.found302);
+                setStatus(responseFactory.getStatus());
+                httpBody = responseFactory.getHttpBody();
                 setUpHeader(FileType(path), httpBody.length());
                 somethingWrong = true; // when error occur
 
-                System.out.println(path);
 
-
-            }
-            else if (isFileCharged(file)){
-                System.out.println("Permission denied: " + path);
-                setStatus("HTTP/1.1 402 Payment required " + "\r\n");
-                httpBody = ("<!DOCTYPE html>" +
-                        "<HTML>" +
-                        "<HEAD><TITLE>402 Payment required </TITLE></HEAD>" +
-                        "<BODY><h1> 402 Payment required for this request</h1>" +
-                        "You do have to subscribe or pay to get access to this page </BODY></HTML>");
+            } else if (isFileCharged(file)) {
+                responseFactory = new responseFactory(HttpHandlar.responseFactory.ResponseNr.payment402);
+                setStatus(responseFactory.getStatus());
+                httpBody = responseFactory.getHttpBody();
                 setUpHeader(FileType(path), httpBody.length());
-
                 somethingWrong = true;
-            }
-
-            else if (!isFileExist(file)) {
+            } else if (!isFileExist(file)) {
                 //404 file not found response
                 //this to be decided by the method isFIleExist
-                setStatus("HTTP/1.1 404 NOT FOUND " + "\r\n");
-                httpBody = "<!DOCTYPE html>" +
-                        "<HTML>" +
-                        "<HEAD><TITLE>404 Not Found</TITLE></HEAD>" +
-                        "<BODY><h1> 404 NOT FOUND</h1>" +
-                        "Requested page is not found!</BODY></HTML>";
-
+                responseFactory = new responseFactory(HttpHandlar.responseFactory.ResponseNr.NotFound404);
+                setStatus(responseFactory.getStatus());
+                httpBody = responseFactory.getHttpBody();
                 setUpHeader(FileType(path), httpBody.length());
                 somethingWrong = true; // when error occur
             } else {
                 //500 internal sever error
-                setStatus("HTTP/1.1 500 Internal Server Error " + "\r\n");
-
-                httpBody = (
-                        "<!DOCTYPE html>" +
-                                "<HTML>" +
-                                "<HEAD><TITLE>500 Internal Server Error</TITLE></HEAD>" +
-                                "<BODY><h1> 500 Internal Server Error</h1>" +
-                                "The server encountered an internal error and was unable to complete your request</BODY></HTML>"
-                );
+                responseFactory = new responseFactory(HttpHandlar.responseFactory.ResponseNr.internal500);
+                setStatus(responseFactory.getStatus());
+                httpBody = responseFactory.getHttpBody();
                 setUpHeader(FileType(path), httpBody.length());
                 somethingWrong = true;
             }
-        } else if (req.getMethodName().contains("POST")) {
-            if (path.endsWith("/")) {
-                setPath(path.substring(0, (path.length() - 2)));
-
-            }
+        }
 
             // POST METHOD ******************************
             else if (req.getMethodName().equals(HttpRequest.HTTP_RequestType.POST.toString())) {
@@ -153,7 +123,6 @@ public class HttpResponse {
                 fos.write(imgData);
                 fos.close();
                 System.out.println(file +" is file ");
-                //TODO implement post methodddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 
                 setStatus("HTTP/1.1 200 OK " + "\r\n");
                 setUpHeader(FileType(path), file.length());
@@ -161,7 +130,7 @@ public class HttpResponse {
             }
 
         }
-    }
+
 
     private boolean isFileCharged(File file) {
         String payedFile = "payment.html";
