@@ -4,6 +4,7 @@ package HttpHandlar;
  * Created by Zacky Kharboutli on 2018-02-15.
  */
 
+import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,7 +39,7 @@ public class HttpResponse {
                 setPath(path.substring(0, (path.length() - 1)));
             }
             if (path.isEmpty()) {
-                setPath(path + "/main.html");
+                setPath(path + "/index.html");
             }
             //to ignore the difference between .html or htm
             else if (path.endsWith(".htm")) {
@@ -68,30 +69,10 @@ public class HttpResponse {
                     }
                 }
             } else if (path.startsWith("/delete/")) {
-                String fileToDelete = path.split("/")[2];
-                path = "dir/subdir/" + fileToDelete;
-                Path p = Paths.get(path);
-                if (Files.deleteIfExists(p)) {
-                    setStatus("HTTP/1.1 200 OK " + "\r\n");
-                    httpBody = ("<!DOCTYPE html>" +
-                            "<HTML>" +
-                            "<HEAD><TITLE>File deleted </TITLE></HEAD>" +
-                            "<BODY><h1> File successfuly deleted</h1>" +
-                            "The server doesn't contain the file " + fileToDelete + " anymore.</BODY></HTML>"
-                    );
-                    setUpHeader("file type is Html", httpBody.length());
-                    setResponse(httpBody);
-                } else {
-                    setStatus("HTTP/1.1 200 OK " + "\r\n");
-                    httpBody = ("<!DOCTYPE html>" +
-                            "<HTML>" +
-                            "<HEAD><TITLE>Failure </TITLE></HEAD>" +
-                            "<BODY><h1> The server doesn't contain the file to delete</h1>" +
-                            "Try uploading the file " + fileToDelete + " first.</BODY></HTML>"
-                    );
-                    setUpHeader("file type is Html", httpBody.length());
-                    setResponse(httpBody);
-                }
+
+                deleteFile(path);
+
+
 
 
             }
@@ -121,8 +102,7 @@ public class HttpResponse {
 
             setPath("dir/subdir/" + fileName);
             imgString64 = req.getImgToString();
-            imgData = javax.xml.bind.DatatypeConverter.parseBase64Binary(imgString64);
-
+           imgData = DatatypeConverter.parseBase64Binary(imgString64);
             System.out.println(fileName + " is file name       " + path + " is path");
             isImage = true;
 
@@ -137,17 +117,29 @@ public class HttpResponse {
             setUpHeader(FileType(path), file.length());
 
         } else if (req.getMethodName().equals(HttpRequest.HTTP_RequestType.PUT.toString())) {
+            System.out.println("method is put");
             fileName = req.getUploadFileName();
             fileName = fileName.substring(0, fileName.length() - 1);
 
             setPath("dir/subdir/" + fileName);
             File temp = new File(path);
+
+    //            file.delete();
             if (!temp.exists()) {
                 imgString64 = req.getImgToString();
                 imgData = javax.xml.bind.DatatypeConverter.parseBase64Binary(imgString64);
-
                 setStatus("HTTP/1.1 200 OK " + "\r\n");
-                setUpHeader(FileType(path), imgData.length);
+                httpBody = ("<!DOCTYPE html>" +
+                        "<HTML>" +
+                        "<HEAD><TITLE>Put request</TITLE></HEAD>" +
+                        "<BODY><h1> Put request success </h1>" +
+                        "The file has been added to the server successfully" +
+                        " <li>To see the picture you added <a href=subdir/" +fileName+ ">press here!</a></li>" +
+                        " <li>To DELETE the file you added <a href=delete/"+ fileName+ ">press here!</a></li>" +
+                        " </BODY></HTML>"
+                );
+                setUpHeader("the file is html", httpBody.length());
+                setResponse(httpBody);
 
                 //creating new file on server from data received from browser
                 file = new File(path);
@@ -163,6 +155,8 @@ public class HttpResponse {
                         "The server already contain this file," +
                         " you can't do twice the same PUT request.</BODY></HTML>"
                 );
+
+
                 setUpHeader("file type is Html", httpBody.length());
                 setResponse(httpBody);
 
@@ -235,6 +229,32 @@ public class HttpResponse {
         } catch (FileNotFoundException e) {
             System.out.println("file is not available");
             return false;
+        }
+    }
+
+    /**
+     * Method to delete the file by using PUT-Method
+     * @param path file's location
+     * @throws IOException
+     */
+    public void deleteFile(String path) throws IOException {
+        String fileToDelete = path.split("/")[2];
+        path = "dir/subdir/" + fileToDelete;
+        Path p = Paths.get(path);
+        file =new File (path);
+        if (Files.deleteIfExists(p)) {
+            createResponse(HttpHandlar.responseFactory.ResponseNr.deleted200);
+
+        } else {
+            setStatus("HTTP/1.1 200 OK " + "\r\n");
+            httpBody = ("<!DOCTYPE html>" +
+                    "<HTML>" +
+                    "<HEAD><TITLE>Failure </TITLE></HEAD>" +
+                    "<BODY><h1> The server doesn't contain the file to delete</h1>" +
+                    "Try uploading the file " + fileToDelete + " first.</BODY></HTML>"
+            );
+            setUpHeader("file type is Html", httpBody.length());
+            setResponse(httpBody);
         }
     }
 

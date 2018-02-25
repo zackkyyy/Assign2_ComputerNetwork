@@ -8,7 +8,7 @@ public class responseFactory {
     private String status;
     private String str;
     public enum ResponseNr {
-        OK200, NotFound404, forbidden403, found302, payment402, internal500
+        OK200, NotFound404, forbidden403, found302, payment402, internal500,deleted200
     }
     public responseFactory(ResponseNr responseNr) {
 
@@ -69,6 +69,17 @@ public class responseFactory {
                 setStatus(str);
                 setHttpBody(httpBody);
                 break;
+            case deleted200:
+                str = "HTTP/1.1 200 OK " + "\r\n";
+                httpBody = "<!DOCTYPE html>" +
+                        "<HTML>" +
+                        "<HEAD><TITLE>File deleted </TITLE></HEAD>" +
+                        "<BODY><h1> File successfuly deleted</h1>" +
+                        "The server doesn't contain the file anymore.</BODY></HTML>";
+                setStatus(str);
+                setHttpBody(httpBody);
+
+
         }
     }
     //Getters and setters

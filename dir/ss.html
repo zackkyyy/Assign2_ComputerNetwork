@@ -13,14 +13,6 @@
 </form>
 
 
-<h1> update existing file</h1>
-<form  method="put">
-  <input id ="updateFile " type="file" onchange="PUT();"/>
-  <input id = "updateContents" name="" hidden="on"> <input type="submit" value="submit">
-
-</form>
-
-
 <br><br>
 
 
@@ -42,28 +34,6 @@
             fileReader.readAsDataURL(fileToLoad);
         }
     }
-
-
-    function PUT() {
-
-    		var filesSelected = document.getElementById("pic").files;
-
-    			if (filesSelected.length > 0) {
-
-        			var fileToLoad = filesSelected[0];
-
-					var fileReader = new FileReader();
-
- 					fileReader.onload = function(fileLoadedEvent) {
-            			var filename = fileToLoad.name;
-            			var content = document.getElementById("updateContents");
-            			content.value = fileLoadedEvent.target.result;
-            			content.name = "Method-PUT" + filename;
-        			};
-
- 					fileReader.readAsDataURL(fileToLoad);
- 				}
-			}
 </script>
 
 </body>
