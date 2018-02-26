@@ -57,7 +57,7 @@ public class HttpResponse {
                 }
             }
 
-            //if (path.endsWith("html") || path.endsWith("htm") || path.endsWith("png")) {  // server only accept limited numbers of forms
+            if (path.endsWith("html") || path.endsWith("htm") || path.endsWith("png")) {  // server only accept limited numbers of forms
                 if (isFileExist(file) || !isAccessibleFile(file)) {
                     if (!isAccessibleFile(file)) {
                         //403 permission denied response if the file is not accessible
@@ -97,10 +97,10 @@ public class HttpResponse {
             } else if (file.isDirectory()){
                 createResponse(HttpHandlar.responseFactory.ResponseNr.noContent204);
 
-           // }else {
-             //   createResponse(HttpHandlar.responseFactory.ResponseNr.unSupported415);
+            }else {
+                createResponse(HttpHandlar.responseFactory.ResponseNr.unSupported415);
 
-//            }
+            }
 
         }
 
