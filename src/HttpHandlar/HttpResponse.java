@@ -57,16 +57,15 @@ public class HttpResponse {
                 }
             }
 
-            if (path.endsWith("html") || path.endsWith("htm") || path.endsWith("png")) {  // server only accept limited numbers of forms
+            //if (path.endsWith("html") || path.endsWith("htm") || path.endsWith("png")) {  // server only accept limited numbers of forms
                 if (isFileExist(file) || !isAccessibleFile(file)) {
                     if (!isAccessibleFile(file)) {
                         //403 permission denied response if the file is not accessible
                         System.out.println("Permission denied: " + path);
                         createResponse(HttpHandlar.responseFactory.ResponseNr.forbidden403);
-                    } else if (isFileCharged(file)) {
+                    } else if (isFileCharged(path)) {
                         //404 file is not free source
                         createResponse(HttpHandlar.responseFactory.ResponseNr.payment402);
-
                     } else {
                         try {
                             //200 ok when everything is allrigt
@@ -89,11 +88,7 @@ public class HttpResponse {
                     createResponse(HttpHandlar.responseFactory.ResponseNr.found302);
 
                 } else if (!isFileExist(file)) {
-                    //404 file not found response
-                    responseFactory = new responseFactory(HttpHandlar.responseFactory.ResponseNr.noContent204);
-                    setStatus(responseFactory.getStatus());
-                    setUpHeader(FileType(path), file.length());
-                    Stream(file, buffer);
+                    createResponse(HttpHandlar.responseFactory.ResponseNr.NotFound404);
                 } else {
                     //500 internal sever error
                     createResponse(HttpHandlar.responseFactory.ResponseNr.internal500);
@@ -102,10 +97,10 @@ public class HttpResponse {
             } else if (file.isDirectory()){
                 createResponse(HttpHandlar.responseFactory.ResponseNr.noContent204);
 
-            }else {
-                createResponse(HttpHandlar.responseFactory.ResponseNr.unSupported415);
+           // }else {
+             //   createResponse(HttpHandlar.responseFactory.ResponseNr.unSupported415);
 
-            }
+//            }
 
         }
 
@@ -167,8 +162,8 @@ public class HttpResponse {
                         "<html>" +
                         "<HEAD><TITLE>Put request</TITLE></HEAD>" +
                         "<BODY><h1> Put request cancelled</h1>" +
-                        "The server already contain this file," +
-                        " you can't do twice the same PUT request.</BODY></html>"
+                        "This request has already be fulfilled so no changes have been " +
+                        "made on the file   </BODY></html>"
                 );
 
 
@@ -198,16 +193,13 @@ public class HttpResponse {
     /**
      * Method to test the exception 403 payment
      *
-     * @param file the file to be checked
+     * @param path the path of the file to be checked
      * @return true or false
      */
-    private boolean isFileCharged(File file) {
-        String payedFile = "payment.html";
+    private boolean isFileCharged(String path) {
+        String payedFile = "money1";
         try {
             if (path.contains(payedFile)) {
-                file.setExecutable(false);
-                file.setReadable(false);
-                file.setReadable(false);
                 return true;
             }
 
