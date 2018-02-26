@@ -294,8 +294,6 @@ public class HttpResponse {
         String secretFolder = "/secret/";
         try {
             if (path.contains(secretFolder)) {
-                file.setExecutable(false);
-                file.setReadable(false);
                 file.setReadable(false);
                 return false;
             }
