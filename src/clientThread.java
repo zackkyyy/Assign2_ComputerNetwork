@@ -60,10 +60,6 @@ public class clientThread implements Runnable {
                         out.write(response.getBuf());
                     }
                         if (response.isImage()&&response.isPost()) {
-                                System.out.println(byteRead +"byte read");
-                                System.out.println(response.getimgData().length +"response lenght");
-                                System.out.println(buf.length +"buf lenght");
-
                             out.write(response.getimgData());
 
                         }

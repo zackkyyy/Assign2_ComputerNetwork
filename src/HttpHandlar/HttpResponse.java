@@ -38,60 +38,75 @@ public class HttpResponse {
             if (path.endsWith("/")) {
                 setPath(path.substring(0, (path.length() - 1)));
             }
-            if (path.isEmpty()) {
-                setPath(path + "/index.html");
-            }
+
             //to ignore the difference between .html or htm
             else if (path.endsWith(".htm")) {
                 path = path + "l";
             }
             // path always starts by dir because it is the only folder so far
             this.file = new File("dir" + path);
-
-            //isAccessibleFile(file);  // check if the file is accessible
-            if (isFileExist(file) || !isAccessibleFile(file)) {
-                if (!isAccessibleFile(file)) {
-                    //403 permission denied response if the file is not accessible
-                    System.out.println("Permission denied: " + path);
-                    createResponse(HttpHandlar.responseFactory.ResponseNr.forbidden403);
-                } else {
-                    try {
-                        //200 ok when everything is allrigt
-                        responseFactory = new responseFactory(HttpHandlar.responseFactory.ResponseNr.OK200);
-                        setStatus(responseFactory.getStatus());
-                        setUpHeader(FileType(path), file.length());
-                        Stream(file, buffer);
-
-                    } catch (IOException e) {
-                        e.getMessage();
-                    } catch (Exception e) {
-                        e.getMessage();
+            if (file.isDirectory()) {
+                for (File t : file.listFiles()) {
+                    if (t.getName().equals("index.html")) {
+                        path = path + "/index.html";
+                        this.file = new File("dir" + path);
+                    } else if (t.getName().equals("index.html")) {
+                        path = path + "/index.html";
+                        this.file = new File("dir" + path);
                     }
                 }
-            } else if (path.startsWith("/delete/")) {
+            }
 
-                deleteFile(path);
+            if (path.endsWith("html") || path.endsWith("htm") || path.endsWith("png")) {  // server only accept limited numbers of forms
+                if (isFileExist(file) || !isAccessibleFile(file)) {
+                    if (!isAccessibleFile(file)) {
+                        //403 permission denied response if the file is not accessible
+                        System.out.println("Permission denied: " + path);
+                        createResponse(HttpHandlar.responseFactory.ResponseNr.forbidden403);
+                    } else if (isFileCharged(file)) {
+                        //404 file is not free source
+                        createResponse(HttpHandlar.responseFactory.ResponseNr.payment402);
 
+                    } else {
+                        try {
+                            //200 ok when everything is allrigt
+                            responseFactory = new responseFactory(HttpHandlar.responseFactory.ResponseNr.OK200);
+                            setStatus(responseFactory.getStatus());
+                            setUpHeader(FileType(path), file.length());
+                            Stream(file, buffer);
 
+                        } catch (IOException e) {
+                            e.getMessage();
+                        } catch (Exception e) {
+                            e.getMessage();
+                        }
+                    }
+                } else if (path.startsWith("/delete/")) {
+                    deleteFile(path);
+                }
+                // 302 FOUND Redirect URL
+                else if ((path.contains("test1.html"))) {
+                    createResponse(HttpHandlar.responseFactory.ResponseNr.found302);
 
+                } else if (!isFileExist(file)) {
+                    //404 file not found response
+                    responseFactory = new responseFactory(HttpHandlar.responseFactory.ResponseNr.noContent204);
+                    setStatus(responseFactory.getStatus());
+                    setUpHeader(FileType(path), file.length());
+                    Stream(file, buffer);
+                } else {
+                    //500 internal sever error
+                    createResponse(HttpHandlar.responseFactory.ResponseNr.internal500);
+
+                }
+            } else if (file.isDirectory()){
+                createResponse(HttpHandlar.responseFactory.ResponseNr.noContent204);
+
+            }else {
+                createResponse(HttpHandlar.responseFactory.ResponseNr.unSupported415);
 
             }
-            // 302 FOUND Redirect URL
-            else if ((path.contains("test1.html"))) {
-                createResponse(HttpHandlar.responseFactory.ResponseNr.found302);
 
-            } else if (isFileCharged(file)) {
-                //404 file is not free source
-                createResponse(HttpHandlar.responseFactory.ResponseNr.payment402);
-
-            } else if (!isFileExist(file)) {
-                //404 file not found response
-                createResponse(HttpHandlar.responseFactory.ResponseNr.NotFound404);
-            } else {
-                //500 internal sever error
-                createResponse(HttpHandlar.responseFactory.ResponseNr.internal500);
-
-            }
         }
 
         // POST METHOD ******************************
@@ -102,7 +117,7 @@ public class HttpResponse {
 
             setPath("dir/subdir/" + fileName);
             imgString64 = req.getImgToString();
-           imgData = DatatypeConverter.parseBase64Binary(imgString64);
+            imgData = DatatypeConverter.parseBase64Binary(imgString64);
             System.out.println(fileName + " is file name       " + path + " is path");
             isImage = true;
 
@@ -124,19 +139,19 @@ public class HttpResponse {
             setPath("dir/subdir/" + fileName);
             File temp = new File(path);
 
-    //            file.delete();
+            //            file.delete();
             if (!temp.exists()) {
                 imgString64 = req.getImgToString();
                 imgData = javax.xml.bind.DatatypeConverter.parseBase64Binary(imgString64);
                 setStatus("HTTP/1.1 200 OK " + "\r\n");
                 httpBody = ("<!DOCTYPE html>" +
-                        "<HTML>" +
+                        "<html>" +
                         "<HEAD><TITLE>Put request</TITLE></HEAD>" +
                         "<BODY><h1> Put request success </h1>" +
                         "The file has been added to the server successfully" +
-                        " <li>To see the picture you added <a href=subdir/" +fileName+ ">press here!</a></li>" +
-                        " <li>To DELETE the file you added <a href=delete/"+ fileName+ ">press here!</a></li>" +
-                        " </BODY></HTML>"
+                        " <li>To see the picture you added <a href=subdir/" + fileName + ">press here!</a></li>" +
+                        " <li>To DELETE the file you added <a href=delete/" + fileName + ">press here!</a></li>" +
+                        " </BODY></html>"
                 );
                 setUpHeader("the file is html", httpBody.length());
                 setResponse(httpBody);
@@ -149,15 +164,15 @@ public class HttpResponse {
             } else {
                 setStatus("HTTP/1.1 200 OK " + "\r\n");
                 httpBody = ("<!DOCTYPE html>" +
-                        "<HTML>" +
+                        "<html>" +
                         "<HEAD><TITLE>Put request</TITLE></HEAD>" +
                         "<BODY><h1> Put request cancelled</h1>" +
                         "The server already contain this file," +
-                        " you can't do twice the same PUT request.</BODY></HTML>"
+                        " you can't do twice the same PUT request.</BODY></html>"
                 );
 
 
-                setUpHeader("file type is Html", httpBody.length());
+                setUpHeader("file type is html", httpBody.length());
                 setResponse(httpBody);
 
             }
@@ -234,6 +249,7 @@ public class HttpResponse {
 
     /**
      * Method to delete the file by using PUT-Method
+     *
      * @param path file's location
      * @throws IOException
      */
@@ -241,19 +257,19 @@ public class HttpResponse {
         String fileToDelete = path.split("/")[2];
         path = "dir/subdir/" + fileToDelete;
         Path p = Paths.get(path);
-        file =new File (path);
+        file = new File(path);
         if (Files.deleteIfExists(p)) {
             createResponse(HttpHandlar.responseFactory.ResponseNr.deleted200);
 
         } else {
             setStatus("HTTP/1.1 200 OK " + "\r\n");
             httpBody = ("<!DOCTYPE html>" +
-                    "<HTML>" +
+                    "<html>" +
                     "<HEAD><TITLE>Failure </TITLE></HEAD>" +
                     "<BODY><h1> The server doesn't contain the file to delete</h1>" +
-                    "Try uploading the file " + fileToDelete + " first.</BODY></HTML>"
+                    "Try uploading the file " + fileToDelete + " first.</BODY></html>"
             );
-            setUpHeader("file type is Html", httpBody.length());
+            setUpHeader("file type is html", httpBody.length());
             setResponse(httpBody);
         }
     }
@@ -308,19 +324,20 @@ public class HttpResponse {
      * @return String
      */
     private String FileType(String file) {
+
         if (file.substring(file.length() - 5, file.length()).compareTo(".html") == 0) {
-            return "file type is Html";
+            return "html";
         }
         if (file.substring(file.length() - 4, file.length()).compareTo(".png") == 0) {
-            return "file type is png";
+            return "png";
         } else if (file.substring(file.length() - 4, file.length()).compareTo(".htm") == 0) {
-            return "file type is Html";
+            return "html";
         }
-        return "File is undefined";
+        return "Unsupported file";
     }
 
     /**
-     * This method checks whether the file is Png or HTML and then stream it
+     * This method checks whether the file is Png or html and then stream it
      * to show it on the web page.
      * isImage is used to tell the client to stream the buf as it is an image
      *

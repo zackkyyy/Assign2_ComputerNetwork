@@ -8,7 +8,7 @@ public class responseFactory {
     private String status;
     private String str;
     public enum ResponseNr {
-        OK200, NotFound404, forbidden403, found302, payment402, internal500,deleted200
+        OK200, NotFound404, forbidden403, found302, payment402, internal500, unSupported415, deleted200, noContent204
     }
     public responseFactory(ResponseNr responseNr) {
 
@@ -74,12 +74,33 @@ public class responseFactory {
                 httpBody = "<!DOCTYPE html>" +
                         "<HTML>" +
                         "<HEAD><TITLE>File deleted </TITLE></HEAD>" +
-                        "<BODY><h1> File successfuly deleted</h1>" +
+                        "<BODY><h1> File successfully deleted</h1>" +
                         "The server doesn't contain the file anymore.</BODY></HTML>";
                 setStatus(str);
                 setHttpBody(httpBody);
-
-
+                break;
+            case noContent204:
+                str = "HTTP/1.1 204 No Content " + "\r\n";
+                httpBody ="<!DOCTYPE html>" +
+                        "<HTML>" +
+                        "<HEAD><TITLE> Unsupported Media Type</TITLE></HEAD>" +
+                        "<BODY><h1> Unsupported Media Type</h1>" +
+                        "The server cannot accept your request because the file format" +
+                        "is in an unsupported format</BODY></HTML>" ;
+                setStatus(str);
+                setHttpBody(httpBody);
+                break;
+            case unSupported415:
+                str = "HTTP/1.1 515 Unsupported Media " + "\r\n";
+                httpBody = "<!DOCTYPE html>" +
+                        "<HTML>" +
+                        "<HEAD><TITLE> Unsupported Media Type</TITLE></HEAD>" +
+                        "<BODY><h1> Unsupported Media Type</h1>" +
+                        "The server cannot accept your request because the file format" +
+                        "is in an unsupported format</BODY></HTML>";
+                setStatus(str);
+                setHttpBody(httpBody);
+                break;
         }
     }
     //Getters and setters

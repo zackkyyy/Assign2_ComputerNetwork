@@ -52,9 +52,6 @@ public class    HttpRequest {
         return uploadFileName;
     }
 
-    public String[] getTemp() {
-        return temp;
-    }
 
     enum HTTP_RequestType {
         GET,
